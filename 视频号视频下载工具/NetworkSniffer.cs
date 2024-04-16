@@ -92,19 +92,21 @@ namespace 视频号视频下载工具
             // oSession["x-OverrideSslProtocols"] = "tls1.0;tls1.1;tls1.2";
             if (!oSession.isHTTPS) return;
 
-            var myurl = oSession.fullUrl.ToLower();
+            var myurl = oSession.fullUrl;
 
             //去掉zip压缩
-            if (oSession.RequestMethod == "GET" &&(myurl.EndsWith("/worker_release.js")
-                ||myurl.Contains("feeddetail.")
-                ||myurl.Contains("index.publish")))
+            if (oSession.RequestMethod == "GET"&&
+                (myurl.ToLower().EndsWith("/worker_release.js")
+                ||myurl.ToLower().Contains("feeddetail.publish")
+                ||myurl.ToLower().Contains("index.publish")
+                ||myurl.ToLower().Contains("virtual_svg-icons-register.publish")))
             {
                 oSession.bBufferResponse = true;
                 oSession.oRequest.headers.Remove("Accept-Encoding");
                 // oSession.oRequest.headers.Add("Accept-Encoding", "gzip"); // Uncomment if you want to explicitly allow gzip.
             }
 
-            if (oSession.RequestMethod == "POST" && myurl.Contains("wx.qq.com/my_worker_release"))
+            if (oSession.RequestMethod == "POST" && myurl.ToLower().Contains("wx.qq.com/my_worker_release"))
             {
                 byte[] decArray = oSession.requestBodyBytes;
 
@@ -138,7 +140,7 @@ namespace 视频号视频下载工具
                 oSession.oResponse.headers["Access-Control-Allow-Methods"] = "OPTIONS, POST, GET";
                 oSession.utilSetResponseBody("<html><body>success!</body></html>");
             }
-            if (oSession.RequestMethod == "POST" && myurl.Contains("wx.qq.com/index.publish"))
+            if (oSession.RequestMethod == "POST" && myurl.ToLower().Contains("wx.qq.com/my_index.publish"))
             {
                 var json = oSession.GetRequestBodyAsString();
                 var videoData = VideoManager.ParseVideoDataFromJson(json);
@@ -154,10 +156,26 @@ namespace 视频号视频下载工具
                 oSession.oResponse.headers["Access-Control-Allow-Methods"] = "OPTIONS, POST, GET";
                 oSession.utilSetResponseBody("<html><body>success!</body></html>");
             }
-            if (oSession.RequestMethod == "POST" && oSession.fullUrl.ToLower().Contains("channels.weixin.qq.com/my_feed_detail"))
+            if (oSession.RequestMethod == "POST" && myurl.ToLower().Contains("wx.qq.com/my_feeddetail"))
             {
                 var json = oSession.GetRequestBodyAsString();
- 
+
+                oSession.utilCreateResponseAndBypassServer();
+                oSession.oResponse.headers.HTTPResponseCode = 200;
+                oSession.oResponse.headers.HTTPResponseStatus = "200 OK";
+                oSession.oResponse.headers["Access-Control-Allow-Origin"] = "*";
+                oSession.oResponse.headers["Access-Control-Allow-Headers"] = "*";
+                oSession.oResponse.headers["Access-Control-Allow-Methods"] = "OPTIONS, POST, GET";
+                oSession.utilSetResponseBody("<html><body>success!</body></html>");
+            }
+
+            if (oSession.RequestMethod == "POST" && myurl.ToLower().Contains("wx.qq.com/my_virtual_svg-icons-register.publish"))
+            {
+                var json = oSession.GetRequestBodyAsString();
+
+                var videoData = VideoManager.ParseVideoDataFromJson(json);
+                videoDownloadUrl=videoData.Url;
+                OnDataUpdated(videoData);
 
 
                 oSession.utilCreateResponseAndBypassServer();
@@ -178,10 +196,10 @@ namespace 视频号视频下载工具
 
             if (!session.isHTTPS) return;
 
-            string fullUrl = session.fullUrl;
+            string myurl = session.fullUrl;
 
             // 检查请求类型是否为 GET 并且 URL 结尾是否符合特定模式
-            if (session.RequestMethod == "GET" && fullUrl.EndsWith("/worker_release.js"))
+            if (session.RequestMethod == "GET" && myurl.ToLower().EndsWith("/worker_release.js"))
             {
                 session.utilDecodeResponse(); // 确保响应已解码
                 string replacementScript = @"
@@ -226,7 +244,7 @@ console.log(limitedRR);
                 responseBody = Regex.Replace(responseBody, @"(\w)\.decryptor_array\.set\((\w)\.reverse\(\)\)", replacementScript);
                 session.utilSetResponseBody(responseBody);
             }
-            if (  session.RequestMethod == "GET" && fullUrl.ToLower().Contains("feeddetail.p"))
+            if (false&&  session.RequestMethod == "GET" && myurl.ToLower().Contains("feeddetail.publish"))
             {
                 // 确保响应已解码
                 session.utilDecodeResponse();
@@ -243,7 +261,7 @@ console.log(limitedRR);
         const feedData = Se().feed; // 获取数据
         console.log(feedData); 
         // 发送数据到指定地址
-        fetch('https://wx.qq.com/my_feed_detail', {
+        fetch('https://wx.qq.com/my_feeddetail', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json' // 确保使用正确的内容类型
@@ -272,11 +290,12 @@ console.log(limitedRR);
                 }
             }
             // 特定 URL 处理
-            if (false&&fullUrl.Contains("finder.video.qq.com/251/20302"))
+            if (myurl.ToLower().Contains("finder.video.qq.com/251/20302"))
             {
                 if (session.RequestMethod == "HEAD")
                 {
-                    videoDownloadUrl = fullUrl; // 存储 URL 供其他部分使用
+                    var temp = videoDownloadUrl;
+                    videoDownloadUrl = myurl; // 存储 URL 供其他部分使用
                 }
                 // 添加跨域访问控制响应头
                 session.oResponse.headers.Add("Access-Control-Allow-Origin", "*");
@@ -284,7 +303,7 @@ console.log(limitedRR);
                 session.oResponse.headers.Add("Access-Control-Allow-Methods", "OPTIONS, POST, GET");
             }
 
-            if (fullUrl.Contains("index.publish"))
+            if (false&& myurl.ToLower().Contains("index.publish"))
             {  // 确保响应已解码
                 session.utilDecodeResponse();
                 string responseBody = session.GetResponseBodyAsString();
@@ -365,10 +384,77 @@ window.mygetback = function () {
     window.wvds = true;
 }
 mygetback();
-
 ";
                 // 在找到的位置后插入代码
                 responseBody = responseBody+ codeToInject;
+
+                // 将修改后的内容写回会话
+                session.utilSetResponseBody(responseBody);
+
+
+            }   
+            
+            if (myurl.ToLower().Contains("virtual_svg-icons-register.publish"))
+            {  // 确保响应已解码
+                session.utilDecodeResponse();
+                string responseBody = session.GetResponseBodyAsString();
+
+
+                // 注入的 onMounted 生命周期钩子的 JavaScript 代码
+                string codeToInject = @"
+    async finderGetCommentDetail(n) {
+        const feedResult = await this.post({
+            name: ""FinderGetCommentDetail"",
+            data: {
+                finderBasereq: {
+                    ...this.finderBasereq,
+                    exptFlag: 1,
+                    requestId: jn()
+                },
+                platformScene: 2,
+                ...n
+            }
+        });
+        var data_object = feedResult.data.object;
+        var media = data_object.objectDesc.media[0];
+        var fetch_body = {
+            //duration: media.spec[0].durationMs,
+            //title: data_object.objectDesc.description,
+            //url: media.url + media.urlToken,
+            //size: media.fileSize,
+            //key: media.decodeKey
+  //""decode_key"": media[""decode_key""], // 解码键
+  //          ""url"": media[""url""] + media[""url_token""], // 视频的完整URL
+  //          ""size"": media[""file_size""], // 文件大小
+  //          ""description"":  value[""object""][""object_desc""][""description""].trim(), // 描述文本
+  //          ""uploader"": value[""object""][""nickname""] // 上传者昵称
+
+  ""decode_key"": media.decodeKey, // 解码键
+            ""url"": media.url + media.urlToken, // 视频的完整URL
+            ""size"": media.fileSize, // 文件大小
+            ""description"": data_object.objectDesc.description, // 描述文本
+            ""uploader"": data_object.nickname // 上传者昵称
+
+
+
+        };
+        fetch('wx.qq.com/my_virtual_svg-icons-register.publish', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(fetch_body)
+        }).then(response=>{
+            console.log(response.ok, response.body)
+        }
+        );
+        return feedResult;
+    }
+";
+                string old = "async finderGetCommentDetail(n){return this.post({name:\"FinderGetCommentDetail\",data:{finderBasereq:{...this.finderBasereq,exptFlag:1,requestId:jn()},platformScene:2,...n}})}";
+
+                // 在找到的位置后插入代码
+                responseBody = responseBody.Replace(old, codeToInject);
 
                 // 将修改后的内容写回会话
                 session.utilSetResponseBody(responseBody);

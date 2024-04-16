@@ -25,4 +25,24 @@ namespace 视频号视频下载工具
         public byte[]? KeyData { get;set; }
     }
 
+    public class VideoData2
+    {
+        [JsonPropertyName("key")]
+        public string? DecodeKey { get; set; }
+
+        [JsonPropertyName("url")]
+        public string? Url { get; set; }
+
+        [JsonPropertyName("size")]
+        public long Size { get; set; }
+
+        [JsonPropertyName("title")]
+        public string? Description { get; set; }
+
+        [JsonPropertyName("uploader")]
+        public string? Uploader { get; set; }
+
+        public byte[]? KeyData { get; set; }
+    }
+
 }
