@@ -39,6 +39,8 @@ namespace 视频号视频下载工具
             networkSniffer.DataUpdated+=NetworkSniffer_DataUpdated;
             networkSniffer.DataKeyUpdated+=NetworkSniffer_DataKeyUpdated;
 
+            videoDownloader=new VideoDownloader();
+
         }
 
         private void NetworkSniffer_DataKeyUpdated(object? sender, VideoKeyDataEventArgs e)
@@ -51,12 +53,14 @@ namespace 视频号视频下载工具
         {
             listView1.View = View.Details; // 设置视图为详细信息模式
 
-            listView1.Columns.Add("Description", 150, HorizontalAlignment.Left);
-            listView1.Columns.Add("Uploader", 150, HorizontalAlignment.Left);
-            listView1.Columns.Add("Decode Key", 100, HorizontalAlignment.Left);
-            listView1.Columns.Add("Size", 100, HorizontalAlignment.Left);
-            listView1.Columns.Add("URL", 200, HorizontalAlignment.Left);
-            listView1.Columns.Add("Key Bytes", 200, HorizontalAlignment.Left);
+            listView1.Columns.Add("Description", "Description", 150);
+            listView1.Columns.Add("Uploader", "Uploader", 150);
+            listView1.Columns.Add("Decode Key", "Decode Key", 100);
+            listView1.Columns.Add("Size", "Size", 100);
+            listView1.Columns.Add("Downloaded", "Downloaded", 100);
+            listView1.Columns.Add("URL", "URL", 200);
+            listView1.Columns.Add("Key Bytes", "Key Bytes", 200);
+
             listView1.FullRowSelect = true; // 选择整行
 
         }
@@ -84,7 +88,7 @@ namespace 视频号视频下载工具
             foreach (var item in list)
             {
                 if (!newVideos.Any(v => HttpUtility.ParseQueryString(new Uri(v.Url).Query)["encfilekey"] ==
-                HttpUtility.ParseQueryString(new Uri(item.SubItems[4].Text).Query)["encfilekey"]))
+                HttpUtility.ParseQueryString(new Uri(item.SubItems[5].Text).Query)["encfilekey"]))
                 {
                     listView1.Items.Remove(item);
                 }
@@ -96,7 +100,7 @@ namespace 视频号视频下载工具
                 // 查找是否已经有这个 URL 的视频
                 ListViewItem item = listView1.Items.Cast<ListViewItem>().FirstOrDefault(
                     item => HttpUtility.ParseQueryString(new Uri(video.Url).Query)["encfilekey"] ==
-                HttpUtility.ParseQueryString(new Uri(item.SubItems[4].Text).Query)["encfilekey"]);
+                HttpUtility.ParseQueryString(new Uri(item.SubItems[5].Text).Query)["encfilekey"]);
                 string hexString = "";
                 if (video.KeyData!=null)
                 {
@@ -106,26 +110,28 @@ namespace 视频号视频下载工具
                 {
 
                     // 如果项不存在，则创建新项。
-                    item = new ListViewItem(video.Description);  // 主文本设置为 Description
-                    item.SubItems.Add(video.Uploader ?? "");     // 添加子项 Uploader
-                    item.SubItems.Add(video.DecodeKey ?? "");    // 添加子项 Decode Key
-                    item.SubItems.Add(video.Size.ToString());    // 添加子项 Size
-                    item.SubItems.Add(video.Url ?? "");          // 添加子项 URL
-                    item.SubItems.Add(hexString);
-                    item.Tag = video.KeyData;                    // 在 Tag 中存储 KeyData
+                    item =  new ListViewItem(video.Description);  // 主文本设置为 Description
+                    item.SubItems.Add(video.Uploader ?? "");   // 对应 "Uploader" 列
+                    item.SubItems.Add(video.DecodeKey ?? "");  // 对应 "Decode Key" 列
+                    item.SubItems.Add(video.Size.ToString());  // 对应 "Size" 列
+                    item.SubItems.Add("");                    // 对应 "Downloaded" 列，初始为空
+                    item.SubItems.Add(video.Url ?? "");        // 对应 "URL" 列
+                    item.SubItems.Add(hexString??"");
+                    item.Tag = video.KeyData;  // 重新设置或更新 Tag 中的 KeyData
                     listView1.Items.Add(item);
                 }
                 else
                 {
-                    if (item.SubItems[5].Text=="")
+                    if (item.SubItems[6].Text=="")
                     {
                         // 更新现有项的内容，如果它们有变化
                         item.Text = video.Description;
                         item.SubItems[1].Text = video.Uploader ?? "";
                         item.SubItems[2].Text = video.DecodeKey ?? "";
                         item.SubItems[3].Text = video.Size.ToString();
-                        item.SubItems[4].Text = video.Url ?? "";
-                        item.SubItems[5].Text=hexString;
+                         item.SubItems[4].Text="";     
+                        item.SubItems[5].Text = video.Url ?? "";
+                        item.SubItems[6].Text=hexString;
                         item.Tag = video.KeyData;  // 重新设置或更新 Tag 中的 KeyData
                     }
                 }
@@ -158,18 +164,97 @@ namespace 视频号视频下载工具
                 networkSniffer.Stop();
             }
         }
-
-        private void button1_Click(object sender, EventArgs e)
+        private SemaphoreSlim semaphore = new SemaphoreSlim(3);
+        private CancellationTokenSource cancellationTokenSource = null;
+        private List<Task> tasks = new List<Task>();
+        private async void button1_Click(object sender, EventArgs e)
         {
 
+            // 如果之前已经创建了 CancellationTokenSource，那么取消所有任务
+            if (cancellationTokenSource != null)
+            {
+                cancellationTokenSource.Cancel();
+                cancellationTokenSource.Dispose();
+                cancellationTokenSource = null;
 
-           // VideoManager.ClearVideos();
+                await Task.WhenAll(tasks); // 等待所有已开始的任务完成
+                tasks.Clear(); // 清空任务列表
+
+                MessageBox.Show("All tasks have been cancelled or completed.");
+                return;
+            }
+
+            // 创建新的 CancellationTokenSource
+            cancellationTokenSource = new CancellationTokenSource();
+            var token = cancellationTokenSource.Token;
+
+            foreach (ListViewItem item in listView1.SelectedItems)
+            {
+                if (item.SubItems[4].Text != "Yes" && item.SubItems[6].Text != "")
+                {
+                    var task = ProcessItemAsync(item, token);
+                    tasks.Add(task);
+                }
+            }
+
+            try
+            {
+                await Task.WhenAll(tasks);
+            }
+            catch (OperationCanceledException)
+            {
+                MessageBox.Show("Tasks were cancelled.");
+            }
+            finally
+            {
+                tasks.Clear(); // 完成后清空任务列表
+            }
+
+            cancellationTokenSource.Dispose();
+            cancellationTokenSource = null;
 
 
-            // 获取导出的函数
-            //  var wasm_isaac_generate = instance.GetFunction("wasm_isaac_generate");
+        }
+        private async Task ProcessItemAsync(ListViewItem item, CancellationToken cancellationToken)
+        {
+            await semaphore.WaitAsync(cancellationToken);
+            try
+            {
+                string url = item.SubItems[5].Text; // "URL" 列
+                byte[] keyBytes = item.Tag as byte[]; // 从 Tag 获取密钥
+                string filename = item.Text; // 使用 Description 作为文件名
+                long fileSize = long.Parse(item.SubItems[3].Text); // "Size" 列，假设已经是字节为单位
+                                                                        // 创建一个进度条更新实例
+                IProgress<double> progress = new Progress<double>(percent =>
+                {
+                    this.Invoke(new Action(() =>
+                    {
+                        item.SubItems[4].Text = $"{(int)(percent * 100)}%"; // 更新下载进度到 "Downloaded" 列
+                    }));
+                });
 
+                //bool r2= await videoDownloader.DownloadAndDecryptVideoAsync(url, keyBytes, filename);
+                bool result = await videoDownloader.DownloadAndDecryptVideoAsync(url, keyBytes, filename, cancellationToken, progress);
 
+                if (!cancellationToken.IsCancellationRequested)
+                {
+                    this.Invoke(new Action(() =>
+                    {
+                        item.SubItems[4].Text = result ? "Yes" : "No";
+                    }));
+                }
+            }
+            catch (Exception ex)
+            {
+                this.Invoke(new Action(() =>
+                {
+                    item.SubItems[4].Text = "Error"; // 在出错时更新状态
+                }));
+            }
+            finally
+            {
+                semaphore.Release();
+            }
         }
 
         private void timer_更新界面_Tick(object sender, EventArgs e)
@@ -184,8 +269,13 @@ namespace 视频号视频下载工具
             if (listView1.SelectedItems.Count>0)
             {
                 //剪贴板
-                Clipboard.SetText(listView1.SelectedItems[0].SubItems[4].Text);
+                Clipboard.SetText(listView1.SelectedItems[0].SubItems[5].Text);
             }
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

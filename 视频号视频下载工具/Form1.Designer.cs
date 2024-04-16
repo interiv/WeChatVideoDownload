@@ -53,13 +53,13 @@
             richTextBox1.Location = new Point(31, 317);
             richTextBox1.Margin = new Padding(4);
             richTextBox1.Name = "richTextBox1";
-            richTextBox1.Size = new Size(838, 257);
+            richTextBox1.Size = new Size(861, 257);
             richTextBox1.TabIndex = 1;
             richTextBox1.Text = "";
             // 
             // button1
             // 
-            button1.Location = new Point(954, 99);
+            button1.Location = new Point(898, 44);
             button1.Name = "button1";
             button1.Size = new Size(75, 23);
             button1.TabIndex = 2;
@@ -94,6 +94,7 @@
             Margin = new Padding(4);
             Name = "Form1";
             Text = "Form1";
+            Load += Form1_Load;
             ResumeLayout(false);
             PerformLayout();
         }

@@ -37,37 +37,11 @@ namespace 视频号视频下载工具
 
 
 
-        public IProgress<string> DownloaderProgress;
+ 
 
-        VideoDownloader videoDownloader;
+  
         public VideoManager()
-        {
-            //SnifferProgress = new Progress<object>(message =>
-            //{
-            //    switch (message)
-            //    {
-            //        case VideoKey videoKey:
-            //            ProcessVideoKey(videoKey);
-            //            break;
-            //        case VideoData videoData:
-            //            AddVideoData(videoData);
-            //            break;
-            //        default:
-            //            Console.WriteLine("Unsupported data type reported.");
-            //            break;
-            //    }
-            //});
-            DownloaderProgress =new Progress<object>(message =>
-            {
-                switch (message)
-                {
-
-                    default:
-                        Console.WriteLine("Unsupported data type reported.");
-                        break;
-                }
-            });
-            videoDownloader = new VideoDownloader(DownloaderProgress);
+        {   
         }
 
         // 添加 VideoData 到列表，但前提是不存在相同的 Url
@@ -91,30 +65,24 @@ namespace 视频号视频下载工具
             }
         }
 
-        public void AddVideoKeyData(VideoKeyData videoKey)
-        {   
+        public async void AddVideoKeyData(VideoKeyData videoKey)
+        {
+            await Task.Delay(2000);
+
             var vurl2= HttpUtility.ParseQueryString(new Uri(videoKey.Url).Query)["encfilekey"];
-            string? filename = "";
-            for (int i = 0; i < videoDataList.Count; i++)
+
+            for (int i = videoDataList.Count - 1; i >= 0; i--)
             {
                 var vurl = HttpUtility.ParseQueryString(new Uri(videoDataList[i].Url).Query)["encfilekey"];
              
                 if (vurl2==vurl)
                 {
                     videoDataList[i].KeyData =(byte[])videoKey.Key.Clone();
-                    filename = videoDataList[i].Description;
+                 
 
-                    break;  // Assuming URLs are unique, we can stop once we've found the match
+                    return;  // Assuming URLs are unique, we can stop once we've found the match
                 }
-            }
-            if (filename == null || filename=="")
-            {
-                filename=DateTime.Now.ToBinary().ToString();
-            }
-            if (videoKey.Url!="")
-            {
-                Task.Run(() => videoDownloader.DownloadAndDecryptVideoAsync(videoKey.Url, videoKey.Key, filename));
-            }
+            } 
 
 
 

@@ -218,7 +218,7 @@ console.log(limitedRR);
         console.log(response.ok, response.body)
     });
     $1.decryptor_array.set(rr);
-}, 100);"; // 使用 setTimeout 延迟 3 秒执行
+}, 1000);"; // 使用 setTimeout 延迟 3 秒执行
                  replacementScript = @"
 
     var rr=$2.reverse();
