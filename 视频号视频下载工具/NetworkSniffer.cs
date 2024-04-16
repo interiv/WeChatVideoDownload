@@ -1,6 +1,7 @@
 ﻿using Fiddler;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -143,6 +144,20 @@ namespace 视频号视频下载工具
                 var videoData = VideoManager.ParseVideoDataFromJson(json);
                 videoDownloadUrl=videoData.Url;
                 OnDataUpdated(videoData);
+
+
+                oSession.utilCreateResponseAndBypassServer();
+                oSession.oResponse.headers.HTTPResponseCode = 200;
+                oSession.oResponse.headers.HTTPResponseStatus = "200 OK";
+                oSession.oResponse.headers["Access-Control-Allow-Origin"] = "*";
+                oSession.oResponse.headers["Access-Control-Allow-Headers"] = "*";
+                oSession.oResponse.headers["Access-Control-Allow-Methods"] = "OPTIONS, POST, GET";
+                oSession.utilSetResponseBody("<html><body>success!</body></html>");
+            }
+            if (oSession.RequestMethod == "POST" && oSession.fullUrl.ToLower().Contains("channels.weixin.qq.com/my_feed_detail"))
+            {
+                var json = oSession.GetRequestBodyAsString();
+ 
 
 
                 oSession.utilCreateResponseAndBypassServer();
