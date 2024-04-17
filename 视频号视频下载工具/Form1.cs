@@ -129,7 +129,7 @@ namespace 视频号视频下载工具
                         item.SubItems[1].Text = video.Uploader ?? "";
                         item.SubItems[2].Text = video.DecodeKey ?? "";
                         item.SubItems[3].Text = video.Size.ToString();
-                         item.SubItems[4].Text="";     
+                        item.SubItems[4].Text="";
                         item.SubItems[5].Text = video.Url ?? "";
                         item.SubItems[6].Text=hexString;
                         item.Tag = video.KeyData;  // 重新设置或更新 Tag 中的 KeyData
@@ -190,7 +190,7 @@ namespace 视频号视频下载工具
 
             foreach (ListViewItem item in listView1.SelectedItems)
             {
-                if (item.SubItems[4].Text != "Yes" && item.SubItems[6].Text != "")
+                if ( item.SubItems[6].Text != "")
                 {
                     var task = ProcessItemAsync(item, token);
                     tasks.Add(task);
@@ -222,9 +222,9 @@ namespace 视频号视频下载工具
             {
                 string url = item.SubItems[5].Text; // "URL" 列
                 byte[] keyBytes = item.Tag as byte[]; // 从 Tag 获取密钥
-                string filename = item.Text; // 使用 Description 作为文件名
                 long fileSize = long.Parse(item.SubItems[3].Text); // "Size" 列，假设已经是字节为单位
-                                                                        // 创建一个进度条更新实例
+                string filename = item.Text+"-"+fileSize; // 使用 Description 作为文件名
+                                                          // 创建一个进度条更新实例
                 IProgress<double> progress = new Progress<double>(percent =>
                 {
                     this.Invoke(new Action(() =>
@@ -276,6 +276,11 @@ namespace 视频号视频下载工具
         private void Form1_Load(object sender, EventArgs e)
         {
 
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            VideoManager.ClearVideos();
         }
     }
 }

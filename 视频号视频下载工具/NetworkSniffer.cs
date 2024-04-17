@@ -86,7 +86,7 @@ namespace 视频号视频下载工具
             Console.WriteLine("FiddlerCore stopped.");
         }
         byte[] all = null;
-        private void OnBeforeRequest(Session oSession)
+        private async void OnBeforeRequest(Session oSession)
         {
 
             // oSession["x-OverrideSslProtocols"] = "tls1.0;tls1.1;tls1.2";
@@ -108,37 +108,45 @@ namespace 视频号视频下载工具
 
             if (oSession.RequestMethod == "POST" && myurl.ToLower().Contains("wx.qq.com/my_worker_release"))
             {
-                byte[] decArray = oSession.requestBodyBytes;
-
-
-
-                if (decArray.Length==131072)
+                await Task.Delay(5000);
+                try
                 {
-                    all = (byte[])decArray.Clone();
-                    // var  all2 = ((byte[])(all.Reverse())).Clone();
-                    string videoUrl = videoDownloadUrl; // Assume this retrieves the URL stored earlier
-                    videoDownloadUrl="";
-                    if (videoUrl!="")
+                    byte[] decArray = oSession.requestBodyBytes;
+
+
+
+                    if (decArray.Length==131072)
                     {
-                        var videoKey = new VideoKeyData(videoUrl, decArray);
-                        OnDataKeyUpdated(videoKey);
+                        all = (byte[])decArray.Clone();
+                        // var  all2 = ((byte[])(all.Reverse())).Clone();
+                        string videoUrl = videoDownloadUrl; // Assume this retrieves the URL stored earlier
+                        videoDownloadUrl="";
+                        if (videoUrl!="")
+                        {
+                            var videoKey = new VideoKeyData(videoUrl, decArray);
+                            OnDataKeyUpdated(videoKey);
+                        }
+
+
+                        //progress.Report(videoKey);
+                    }
+                    else
+                    {
+
                     }
 
-
-                    //progress.Report(videoKey);
+                    oSession.utilCreateResponseAndBypassServer();
+                    oSession.oResponse.headers.HTTPResponseCode = 200;
+                    oSession.oResponse.headers.HTTPResponseStatus = "200 OK";
+                    oSession.oResponse.headers["Access-Control-Allow-Origin"] = "*";
+                    oSession.oResponse.headers["Access-Control-Allow-Headers"] = "*";
+                    oSession.oResponse.headers["Access-Control-Allow-Methods"] = "OPTIONS, POST, GET";
+                    oSession.utilSetResponseBody("<html><body>success!</body></html>");
                 }
-                else
+                catch
                 {
 
                 }
-
-                oSession.utilCreateResponseAndBypassServer();
-                oSession.oResponse.headers.HTTPResponseCode = 200;
-                oSession.oResponse.headers.HTTPResponseStatus = "200 OK";
-                oSession.oResponse.headers["Access-Control-Allow-Origin"] = "*";
-                oSession.oResponse.headers["Access-Control-Allow-Headers"] = "*";
-                oSession.oResponse.headers["Access-Control-Allow-Methods"] = "OPTIONS, POST, GET";
-                oSession.utilSetResponseBody("<html><body>success!</body></html>");
             }
             if (oSession.RequestMethod == "POST" && myurl.ToLower().Contains("wx.qq.com/my_index.publish"))
             {
@@ -174,7 +182,7 @@ namespace 视频号视频下载工具
                 var json = oSession.GetRequestBodyAsString();
 
                 var videoData = VideoManager.ParseVideoDataFromJson(json);
-                videoDownloadUrl=videoData.Url;
+               // videoDownloadUrl=videoData.Url;
                 OnDataUpdated(videoData);
 
 
@@ -294,6 +302,10 @@ console.log(limitedRR);
             {
                 if (session.RequestMethod == "HEAD")
                 {
+                    if (myurl!=videoDownloadUrl)
+                    {
+
+                    }
                     var temp = videoDownloadUrl;
                     videoDownloadUrl = myurl; // 存储 URL 供其他部分使用
                 }

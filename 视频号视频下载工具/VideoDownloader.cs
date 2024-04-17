@@ -98,8 +98,7 @@ namespace 视频号视频下载工具
         {
             // 使用 HttpUtility.ParseQueryString 来解析查询字符串
             string encfilekey = HttpUtility.ParseQueryString(new Uri(videoUrl).Query)["encfilekey"];
-            if (!VideoUrls.Contains(encfilekey))
-            {
+            
                 VideoUrls.Add(encfilekey);
 
                 // 随机文件名
@@ -132,7 +131,7 @@ namespace 视频号视频下载工具
                                 using (var stream = await response.Content.ReadAsStreamAsync())
                                 {
                                     int read;
-                                    var buffer = new byte[81920]; // Larger buffer for more efficient reading
+                                    var buffer = new byte[500000]; // Larger buffer for more efficient reading
 
                                     while ((read = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0)
                                     {
@@ -169,7 +168,7 @@ namespace 视频号视频下载工具
                         return false;
                     }
                 }
-            }
+            
             return true;
         }
 

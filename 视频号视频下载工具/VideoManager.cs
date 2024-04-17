@@ -67,18 +67,18 @@ namespace 视频号视频下载工具
 
         public async void AddVideoKeyData(VideoKeyData videoKey)
         {
-            await Task.Delay(2000);
+            //await Task.Delay(5000);
 
-            var vurl2= HttpUtility.ParseQueryString(new Uri(videoKey.Url).Query)["encfilekey"];
+            var vurl2 =   HttpUtility.ParseQueryString(new Uri(videoKey.Url).Query)["encfilekey"];
 
             for (int i = videoDataList.Count - 1; i >= 0; i--)
             {
-                var vurl = HttpUtility.ParseQueryString(new Uri(videoDataList[i].Url).Query)["encfilekey"];
+                var vurl =  HttpUtility.ParseQueryString(new Uri(videoDataList[i].Url).Query)["encfilekey"];
              
                 if (vurl2==vurl)
                 {
                     videoDataList[i].KeyData =(byte[])videoKey.Key.Clone();
-                 
+                    videoDataList[i].Url = videoKey.Url;
 
                     return;  // Assuming URLs are unique, we can stop once we've found the match
                 }

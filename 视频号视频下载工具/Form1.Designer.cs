@@ -34,6 +34,7 @@
             button1 = new Button();
             listView1 = new ListView();
             timer_更新界面 = new System.Windows.Forms.Timer(components);
+            button2 = new Button();
             SuspendLayout();
             // 
             // checkBox_开启监听
@@ -63,7 +64,7 @@
             button1.Name = "button1";
             button1.Size = new Size(75, 23);
             button1.TabIndex = 2;
-            button1.Text = "button1";
+            button1.Text = "下载选择的文件";
             button1.UseVisualStyleBackColor = true;
             button1.Click += button1_Click;
             // 
@@ -82,12 +83,23 @@
             timer_更新界面.Interval = 1000;
             timer_更新界面.Tick += timer_更新界面_Tick;
             // 
+            // button2
+            // 
+            button2.Location = new Point(898, 73);
+            button2.Name = "button2";
+            button2.Size = new Size(75, 23);
+            button2.TabIndex = 2;
+            button2.Text = "清除数据";
+            button2.UseVisualStyleBackColor = true;
+            button2.Click += button2_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1092, 602);
             Controls.Add(listView1);
+            Controls.Add(button2);
             Controls.Add(button1);
             Controls.Add(richTextBox1);
             Controls.Add(checkBox_开启监听);
@@ -106,6 +118,7 @@
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.ListView listView1;
         private System.Windows.Forms.Timer timer_更新界面;
+        private Button button2;
     }
 }
 
