@@ -30,11 +30,12 @@
         {
             components = new System.ComponentModel.Container();
             checkBox_开启监听 = new CheckBox();
-            richTextBox1 = new RichTextBox();
-            button1 = new Button();
             listView1 = new ListView();
             timer_更新界面 = new System.Windows.Forms.Timer(components);
             button2 = new Button();
+            button3 = new Button();
+            checkBox_下载所有视频 = new CheckBox();
+            button_清空微信浏览器缓存 = new Button();
             SuspendLayout();
             // 
             // checkBox_开启监听
@@ -49,30 +50,12 @@
             checkBox_开启监听.UseVisualStyleBackColor = true;
             checkBox_开启监听.CheckedChanged += checkBox_开启监听_CheckedChanged;
             // 
-            // richTextBox1
-            // 
-            richTextBox1.Location = new Point(31, 317);
-            richTextBox1.Margin = new Padding(4);
-            richTextBox1.Name = "richTextBox1";
-            richTextBox1.Size = new Size(861, 257);
-            richTextBox1.TabIndex = 1;
-            richTextBox1.Text = "";
-            // 
-            // button1
-            // 
-            button1.Location = new Point(898, 44);
-            button1.Name = "button1";
-            button1.Size = new Size(75, 23);
-            button1.TabIndex = 2;
-            button1.Text = "下载选择的文件";
-            button1.UseVisualStyleBackColor = true;
-            button1.Click += button1_Click;
-            // 
             // listView1
             // 
+            listView1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
             listView1.Location = new Point(31, 44);
             listView1.Name = "listView1";
-            listView1.Size = new Size(861, 266);
+            listView1.Size = new Size(861, 528);
             listView1.TabIndex = 3;
             listView1.UseCompatibleStateImageBehavior = false;
             listView1.ItemSelectionChanged += listView1_ItemSelectionChanged;
@@ -85,13 +68,47 @@
             // 
             // button2
             // 
-            button2.Location = new Point(898, 73);
+            button2.Location = new Point(899, 72);
             button2.Name = "button2";
-            button2.Size = new Size(75, 23);
+            button2.Size = new Size(142, 23);
             button2.TabIndex = 2;
             button2.Text = "清除数据";
             button2.UseVisualStyleBackColor = true;
             button2.Click += button2_Click;
+            // 
+            // button3
+            // 
+            button3.Location = new Point(899, 214);
+            button3.Name = "button3";
+            button3.Size = new Size(142, 23);
+            button3.TabIndex = 2;
+            button3.Text = "测试";
+            button3.UseVisualStyleBackColor = true;
+            button3.Visible = false;
+            button3.Click += button3_Click;
+            // 
+            // checkBox_下载所有视频
+            // 
+            checkBox_下载所有视频.AutoSize = true;
+            checkBox_下载所有视频.Location = new Point(899, 44);
+            checkBox_下载所有视频.Margin = new Padding(4);
+            checkBox_下载所有视频.Name = "checkBox_下载所有视频";
+            checkBox_下载所有视频.Size = new Size(99, 21);
+            checkBox_下载所有视频.TabIndex = 0;
+            checkBox_下载所有视频.Text = "下载所有视频";
+            checkBox_下载所有视频.UseVisualStyleBackColor = true;
+            checkBox_下载所有视频.CheckedChanged += checkBox_下载所有视频_CheckedChanged;
+            // 
+            // button_清空微信浏览器缓存
+            // 
+            button_清空微信浏览器缓存.Location = new Point(118, 15);
+            button_清空微信浏览器缓存.Name = "button_清空微信浏览器缓存";
+            button_清空微信浏览器缓存.Size = new Size(142, 23);
+            button_清空微信浏览器缓存.TabIndex = 2;
+            button_清空微信浏览器缓存.Text = "清空微信浏览器缓存";
+            button_清空微信浏览器缓存.UseVisualStyleBackColor = true;
+            button_清空微信浏览器缓存.Visible = false;
+            button_清空微信浏览器缓存.Click += button_清空微信浏览器缓存_Click;
             // 
             // Form1
             // 
@@ -99,13 +116,15 @@
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1092, 602);
             Controls.Add(listView1);
+            Controls.Add(button3);
+            Controls.Add(button_清空微信浏览器缓存);
             Controls.Add(button2);
-            Controls.Add(button1);
-            Controls.Add(richTextBox1);
+            Controls.Add(checkBox_下载所有视频);
             Controls.Add(checkBox_开启监听);
             Margin = new Padding(4);
             Name = "Form1";
-            Text = "Form1";
+            Text = "视频号视频下载工具 2024年4月21日";
+            FormClosing += Form1_FormClosing;
             Load += Form1_Load;
             ResumeLayout(false);
             PerformLayout();
@@ -114,11 +133,12 @@
         #endregion
 
         private System.Windows.Forms.CheckBox checkBox_开启监听;
-        private System.Windows.Forms.RichTextBox richTextBox1;
-        private System.Windows.Forms.Button button1;
         private System.Windows.Forms.ListView listView1;
         private System.Windows.Forms.Timer timer_更新界面;
         private Button button2;
+        private Button button3;
+        private CheckBox checkBox_下载所有视频;
+        private Button button_清空微信浏览器缓存;
     }
 }
 

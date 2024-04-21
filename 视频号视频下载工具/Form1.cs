@@ -23,18 +23,18 @@ namespace 视频号视频下载工具
             this.SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
 
             InitializeListView();
-            IProgress<string> progress = new Progress<string>(message =>
-                           {
-                               // 确保在UI线程中更新RichTextBox
-                               if (this.richTextBox1.InvokeRequired)
-                               {
-                                   this.richTextBox1.Invoke(new Action<string>(UpdateRichTextBox), message);
-                               }
-                               else
-                               {
-                                   UpdateRichTextBox(message);
-                               }
-                           });
+            //IProgress<string> progress = new Progress<string>(message =>
+            //               {
+            //                   // 确保在UI线程中更新RichTextBox
+            //                   if (this.richTextBox1.InvokeRequired)
+            //                   {
+            //                       this.richTextBox1.Invoke(new Action<string>(UpdateRichTextBox), message);
+            //                   }
+            //                   else
+            //                   {
+            //                       UpdateRichTextBox(message);
+            //                   }
+            //               });
             VideoManager=new VideoManager();
             networkSniffer.DataUpdated+=NetworkSniffer_DataUpdated;
             networkSniffer.DataKeyUpdated+=NetworkSniffer_DataKeyUpdated;
@@ -146,17 +146,19 @@ namespace 视频号视频下载工具
         VideoManager VideoManager;
         VideoDownloader videoDownloader;
 
-        private void UpdateRichTextBox(string message)
-        {
-            richTextBox1.AppendText(message + "\n");
-            richTextBox1.ScrollToCaret(); // 确保滚动到最新内容
-        }
+        //private void UpdateRichTextBox(string message)
+        //{
+        //    richTextBox1.AppendText(message + "\n");
+        //    richTextBox1.ScrollToCaret(); // 确保滚动到最新内容
+        //}
         private void checkBox_开启监听_CheckedChanged(object sender, EventArgs e)
         {
 
 
             if (checkBox_开启监听.Checked)
             {
+                networkSniffer.InstallRootCert();
+
                 networkSniffer.Start();
             }
             else
@@ -181,16 +183,18 @@ namespace 视频号视频下载工具
                 tasks.Clear(); // 清空任务列表
 
                 MessageBox.Show("All tasks have been cancelled or completed.");
+                //  button1.Text="下载所有";
+
                 return;
             }
-
+            //button1.Text="进行中";
             // 创建新的 CancellationTokenSource
             cancellationTokenSource = new CancellationTokenSource();
             var token = cancellationTokenSource.Token;
 
-            foreach (ListViewItem item in listView1.SelectedItems)
+            foreach (ListViewItem item in listView1.Items)
             {
-                if ( item.SubItems[6].Text != "")
+                if (item.SubItems[6].Text != "")
                 {
                     var task = ProcessItemAsync(item, token);
                     tasks.Add(task);
@@ -200,6 +204,7 @@ namespace 视频号视频下载工具
             try
             {
                 await Task.WhenAll(tasks);
+
             }
             catch (OperationCanceledException)
             {
@@ -208,19 +213,103 @@ namespace 视频号视频下载工具
             finally
             {
                 tasks.Clear(); // 完成后清空任务列表
+                               //   button1.Text="下载所有";
             }
 
             cancellationTokenSource.Dispose();
             cancellationTokenSource = null;
-
+            //   button1.Text="已停止,点我下载";
 
         }
+
+
+        private async void checkBox_下载所有视频_CheckedChanged(object sender, EventArgs e)
+        {
+            if (checkBox_下载所有视频.Checked)
+            {
+                StartTasks();
+                // checkBox_下载所有视频.Checked = false;
+            }
+            else
+            {
+                StopTasks();
+            }
+        }
+
+        private async void StartTasks()
+        {
+            if (cancellationTokenSource != null)
+            {
+                cancellationTokenSource.Cancel();
+                cancellationTokenSource.Dispose();
+            }
+
+            cancellationTokenSource = new CancellationTokenSource();
+
+
+            tasks.Clear();
+            foreach (ListViewItem item in listView1.Items)
+            {
+                StartTaskForItem(item, cancellationTokenSource.Token);
+            }
+
+            try
+            {
+                await Task.WhenAll(tasks);
+            }
+            catch (OperationCanceledException)
+            {
+                // Handle cancellation here if needed
+            }
+            finally
+            {
+                // Clear tasks or any other finalization
+            }
+        }
+        private void StartTaskForItem(ListViewItem item, CancellationToken token)
+        {
+            var task = ProcessItemAsync(item, token);
+            tasks.Add(task);
+        }
+        private void StopTasks()
+        {
+            if (cancellationTokenSource != null)
+            {
+                cancellationTokenSource.Cancel();
+                cancellationTokenSource.Dispose();
+                cancellationTokenSource = null;
+            }
+
+            MessageBox.Show("所有任务已取消或完成");
+        }
+
+
+
         private async Task ProcessItemAsync(ListViewItem item, CancellationToken cancellationToken)
         {
             await semaphore.WaitAsync(cancellationToken);
             try
             {
                 string url = item.SubItems[5].Text; // "URL" 列
+                string newUrl = url;
+
+
+                string newFlag = ""; // The new value you want to use
+
+                // Find the start index of the parameter you want to change
+                int startIndex = url.IndexOf("X-snsvideoflag=") + "X-snsvideoflag=".Length;
+                int endIndex = url.IndexOf("&", startIndex);
+                if (endIndex == -1) // If it's the last parameter
+                {
+                    endIndex = url.Length;
+                }
+
+                // Replace the old value with the new value
+                newUrl = url.Substring(0, startIndex) + newFlag + url.Substring(endIndex);
+
+
+
+
                 byte[] keyBytes = item.Tag as byte[]; // 从 Tag 获取密钥
                 long fileSize = long.Parse(item.SubItems[3].Text); // "Size" 列，假设已经是字节为单位
                 string filename = item.Text+"-"+fileSize; // 使用 Description 作为文件名
@@ -234,7 +323,7 @@ namespace 视频号视频下载工具
                 });
 
                 //bool r2= await videoDownloader.DownloadAndDecryptVideoAsync(url, keyBytes, filename);
-                bool result = await videoDownloader.DownloadAndDecryptVideoAsync(url, keyBytes, filename, cancellationToken, progress);
+                bool result = await videoDownloader.DownloadAndDecryptVideoAsync(newUrl, keyBytes, filename, cancellationToken, progress);
 
                 if (!cancellationToken.IsCancellationRequested)
                 {
@@ -280,7 +369,24 @@ namespace 视频号视频下载工具
 
         private void button2_Click(object sender, EventArgs e)
         {
+            checkBox_下载所有视频.Checked=false;
             VideoManager.ClearVideos();
+        }
+
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            networkSniffer.Stop();
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button_清空微信浏览器缓存_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

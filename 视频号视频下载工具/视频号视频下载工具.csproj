@@ -10,6 +10,15 @@
 
   <ItemGroup>
     <PackageReference Include="FiddlerCore.Trial" Version="5.0.2" />
+    <PackageReference Include="Microsoft.ClearScript" Version="7.4.5" />
+    <PackageReference Include="Microsoft.ClearScript.V8.Native.win-x64" Version="7.4.5" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

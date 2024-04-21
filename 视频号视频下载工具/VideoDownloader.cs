@@ -105,6 +105,7 @@ namespace 视频号视频下载工具
                 string name = _filename;
                 string videoFilename = Path.Combine(cachePath, $"{name}.mp4");
 
+            //文件不存在才开始下载.
                 if (!File.Exists(videoFilename))
                 {
                     // 开始下载视频

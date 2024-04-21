@@ -35,24 +35,48 @@ namespace 视频号视频下载工具
             DataKeyUpdated?.Invoke(this, new VideoKeyDataEventArgs(videoKeyData));
         }
 
+        public bool InstallRootCert()
+        {
+            string rootCertificatePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "RootCertificate.p12");
+            string rootCertificatePassword = "S0m3T0pS3cr3tP4ssw1rd";
+            BCCertMaker.BCCertMaker certProvider = new BCCertMaker.BCCertMaker();
+            CertMaker.oCertProvider = certProvider;
+
+            // 先检查本地证书文件是否存在
+            if (File.Exists(rootCertificatePath))
+            {
+                // 从文件读取证书,读取后 再去检测 证书是否被信任之类.
+                certProvider.ReadRootCertificateAndPrivateKeyFromPkcs12File(rootCertificatePath, rootCertificatePassword);
+                // 检查系统中是否已经安装并信任该证书
+                if (!CertMaker.rootCertIsTrusted())
+                {
+                    if (!CertMaker.trustRootCert())
+                        return false;
+                }
+            }
+            else
+            {
+                // 如果本地没有证书文件，则检查系统中是否已存在证书
+                if (!CertMaker.rootCertExists())
+                {
+                    // 创建新的根证书
+                    if (!CertMaker.createRootCert())
+                        return false;
+
+                    // 将新创建的证书写入文件
+                    certProvider.WriteRootCertificateAndPrivateKeyToPkcs12File(rootCertificatePath, rootCertificatePassword);
+
+                    // 信任根证书
+                    if (!CertMaker.trustRootCert())
+                        return false;
+                }
+            }
+
+            return true;  // 证书已正确安装并信任
+        }
 
         public void Start()
         {
-
-            if (!CertMaker.rootCertExists())
-            {
-                if (!CertMaker.createRootCert())
-                {
-                    throw new Exception("Unable to create root certificate.");
-                }
-                else
-                {
-                    if (!CertMaker.trustRootCert())
-                    {
-                        throw new Exception("Unable to install root certificate.");
-                    }
-                }
-            }
 
 
 
@@ -62,8 +86,9 @@ namespace 视频号视频下载工具
                 .DecryptSSL()
                 .Build();
 
-            BCCertMaker.BCCertMaker certProvider = new BCCertMaker.BCCertMaker();
-            CertMaker.oCertProvider = certProvider;
+            //证书这个,提供一次就行了.不要多次,否则就又变空了.
+            //BCCertMaker.BCCertMaker certProvider = new BCCertMaker.BCCertMaker();
+            //CertMaker.oCertProvider = certProvider;
 
             // 启动FiddlerCore
             FiddlerApplication.Startup(startupSettings);
@@ -77,13 +102,22 @@ namespace 视频号视频下载工具
 
         public void Stop()
         {
-            // 注销事件处理函数
-            FiddlerApplication.BeforeRequest -= OnBeforeRequest;
-            FiddlerApplication.BeforeResponse -= OnBeforeResponse;
+            try
+            {
+                // 注销事件处理函数
+                FiddlerApplication.BeforeRequest -= OnBeforeRequest;
+                FiddlerApplication.BeforeResponse -= OnBeforeResponse;
 
-            // 关闭FiddlerCore
-            FiddlerApplication.Shutdown();
-            Console.WriteLine("FiddlerCore stopped.");
+                // 关闭FiddlerCore
+                FiddlerApplication.Shutdown();
+                Console.WriteLine("FiddlerCore stopped.");
+            }
+            catch (Exception)
+            {
+
+                //throw;
+            }
+
         }
         byte[] all = null;
         private async void OnBeforeRequest(Session oSession)
@@ -108,7 +142,7 @@ namespace 视频号视频下载工具
 
             if (oSession.RequestMethod == "POST" && myurl.ToLower().Contains("wx.qq.com/my_worker_release"))
             {
-                await Task.Delay(5000);
+                await Task.Delay(1000);
                 try
                 {
                     byte[] decArray = oSession.requestBodyBytes;
@@ -182,7 +216,7 @@ namespace 视频号视频下载工具
                 var json = oSession.GetRequestBodyAsString();
 
                 var videoData = VideoManager.ParseVideoDataFromJson(json);
-               // videoDownloadUrl=videoData.Url;
+                // videoDownloadUrl=videoData.Url;
                 OnDataUpdated(videoData);
 
 
@@ -227,7 +261,7 @@ console.log(limitedRR);
     });
     $1.decryptor_array.set(rr);
 }, 1000);"; // 使用 setTimeout 延迟 3 秒执行
-                 replacementScript = @"
+                replacementScript = @"
 
     var rr=$2.reverse();
 var limitedRR = Array.from(rr.slice(0, 10)); 
@@ -252,7 +286,7 @@ console.log(limitedRR);
                 responseBody = Regex.Replace(responseBody, @"(\w)\.decryptor_array\.set\((\w)\.reverse\(\)\)", replacementScript);
                 session.utilSetResponseBody(responseBody);
             }
-            if (false&&  session.RequestMethod == "GET" && myurl.ToLower().Contains("feeddetail.publish"))
+            if (false&& session.RequestMethod == "GET" && myurl.ToLower().Contains("feeddetail.publish"))
             {
                 // 确保响应已解码
                 session.utilDecodeResponse();
@@ -270,6 +304,7 @@ console.log(limitedRR);
         console.log(feedData); 
         // 发送数据到指定地址
         fetch('https://wx.qq.com/my_feeddetail', {
+        mode: 'no-cors', // 设置为 ""no-cors"" 以避开 CORS 策略
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json' // 确保使用正确的内容类型
@@ -307,6 +342,10 @@ console.log(limitedRR);
 
                     }
                     var temp = videoDownloadUrl;
+
+                    //替换部分内容
+                    ///  var temp2=myurl.Replace()
+
                     videoDownloadUrl = myurl; // 存储 URL 供其他部分使用
                 }
                 // 添加跨域访问控制响应头
@@ -330,7 +369,7 @@ window.mygetback = function () {
         return
     }
     // 定义接收服务器的URL
-    let receiver_url = ""wx.qq.com/index.publish"";
+    let receiver_url = ""wx.qq.com/my_index.publish"";
     // 定义一个函数，用于处理视频数据的发送
     function send_response_if_is_video(response) {
         // 如果响应未定义，直接返回
@@ -404,8 +443,8 @@ mygetback();
                 session.utilSetResponseBody(responseBody);
 
 
-            }   
-            
+            }
+
             if (myurl.ToLower().Contains("virtual_svg-icons-register.publish"))
             {  // 确保响应已解码
                 session.utilDecodeResponse();
