@@ -386,7 +386,23 @@ namespace 视频号视频下载工具
 
         private void button_清空微信浏览器缓存_Click(object sender, EventArgs e)
         {
-
+            // 检查 WeChat 是否正在运行
+            if (WeChatHelper.IsProcessRunning("wechat"))
+            {
+                MessageBox.Show("WeChat 正在运行，请关闭 WeChat 后再试。");
+            }
+            else
+            {
+                try
+                {
+                    WeChatHelper.ClearWeChatProfileDirectory();
+                    MessageBox.Show("所有内容已被删除。");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("发生错误：" + ex.Message);
+                }
+            }
         }
     }
 }

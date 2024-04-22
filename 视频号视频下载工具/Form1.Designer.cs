@@ -103,11 +103,10 @@
             // 
             button_清空微信浏览器缓存.Location = new Point(118, 15);
             button_清空微信浏览器缓存.Name = "button_清空微信浏览器缓存";
-            button_清空微信浏览器缓存.Size = new Size(142, 23);
+            button_清空微信浏览器缓存.Size = new Size(229, 23);
             button_清空微信浏览器缓存.TabIndex = 2;
             button_清空微信浏览器缓存.Text = "清空微信浏览器缓存";
             button_清空微信浏览器缓存.UseVisualStyleBackColor = true;
-            button_清空微信浏览器缓存.Visible = false;
             button_清空微信浏览器缓存.Click += button_清空微信浏览器缓存_Click;
             // 
             // Form1
